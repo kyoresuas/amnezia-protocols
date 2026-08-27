@@ -65,7 +65,10 @@ select_protocol() {
   read -r index
 
   [[ "$index" =~ ^[0-9]+$ ]] || die "Ожидается номер протокола."
-  [ "$index" -ge 1 ] && [ "$index" -le "${#names[@]}" ] || die "Нет протокола с номером $index."
+
+  if [ "$index" -lt 1 ] || [ "$index" -gt "${#names[@]}" ]; then
+    die "Нет протокола с номером $index."
+  fi
 
   echo "${names[$((index - 1))]}"
 }
