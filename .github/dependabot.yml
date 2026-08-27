@@ -11,11 +11,10 @@ updates:
         patterns:
           - "*"
 
+  # Базовые образы AmneziaWG закреплены на latest, обновлять нечего.
+  # У Xray свой Dockerfile с закрепленной версией Alpine
   - package-ecosystem: docker
-    directories:
-      - /protocols/awg
-      - /protocols/awg-legacy
-      - /protocols/xray
+    directory: /protocols/xray
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
