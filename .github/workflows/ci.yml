@@ -25,24 +25,50 @@ jobs:
         run: shellcheck install.sh protocols/*/*.sh
 
   smoke:
-    name: Install AmneziaWG 3.1
+    name: Install ${{ matrix.protocol }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - protocol: awg
+            args: --port 55424 --subnet 10.9.0.0
+          - protocol: awg-legacy
+            args: --port 55425 --subnet 10.9.1.0
+          - protocol: xray
+            args: --port 8443
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install protocol
-        run: ./install.sh awg --name amnezia-awg-ci --port 55424 --subnet 10.9.0.0
+        run: ./install.sh ${{ matrix.protocol }} --name protocol-ci ${{ matrix.args }}
 
-      - name: Verify interface and 3.1 parameters
+      - name: Verify AmneziaWG 3.1
+        if: matrix.protocol == 'awg'
         run: |
-          docker exec amnezia-awg-ci awg show awg0 | tee awg-show.txt
+          docker exec protocol-ci awg show awg0 | tee awg-show.txt
           grep -q "header protection key:" awg-show.txt
           grep -q "content padding addition:" awg-show.txt
           grep -q "random trailers: on" awg-show.txt
           grep -q "disable cookies: on" awg-show.txt
 
+      - name: Verify AmneziaWG 1.5
+        if: matrix.protocol == 'awg-legacy'
+        run: |
+          docker exec protocol-ci wg show wg0 | tee wg-show.txt
+          grep -q "listening port: 55425" wg-show.txt
+          grep -q "jc:" wg-show.txt
+
+      - name: Verify Xray
+        if: matrix.protocol == 'xray'
+        run: |
+          docker exec protocol-ci sh -lc 'test -s /opt/amnezia/xray/xray_public.key'
+          docker exec protocol-ci sh -lc 'test -s /opt/amnezia/xray/server.json'
+          docker exec protocol-ci sh -lc 'pgrep xray >/dev/null'
+
       - name: Remove container
         if: always()
-        run: docker rm -f amnezia-awg-ci || true
+        run: docker rm -f protocol-ci || true

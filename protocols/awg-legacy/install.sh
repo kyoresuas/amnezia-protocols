@@ -106,6 +106,7 @@ ok "Контейнер запущен"
 # Инициализация конфигурации
 step "Инициализация AmneziaWG Legacy (ключи, wg0.conf)"
 
+$SUDO docker exec -i "$CONTAINER_NAME" mkdir -p /opt/amnezia/awg
 $SUDO docker cp "$SCRIPT_DIR/configure.sh" "${CONTAINER_NAME}:/opt/amnezia/awg/configure.sh"
 $SUDO docker exec -i "$CONTAINER_NAME" chmod +x /opt/amnezia/awg/configure.sh
 

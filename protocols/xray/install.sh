@@ -101,6 +101,7 @@ ok "Контейнер запущен"
 step "Инициализация Xray"
 
 # Копируем скрипт конфигурации в контейнер
+$SUDO docker exec -i "$CONTAINER_NAME" mkdir -p /opt/amnezia/xray
 $SUDO docker cp "$SCRIPT_DIR/configure.sh" "${CONTAINER_NAME}:/opt/amnezia/xray/configure.sh"
 $SUDO docker exec -i "$CONTAINER_NAME" chmod +x /opt/amnezia/xray/configure.sh
 
