@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Syntax check
+        run: |
+          while IFS= read -r script; do
+            bash -n "$script"
+          done < <(find . -name '*.sh')
+
+      - name: ShellCheck
+        run: shellcheck install.sh protocols/*/*.sh
+
+  smoke:
+    name: Install AmneziaWG 3.1
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install protocol
+        run: ./install.sh awg --name amnezia-awg-ci --port 55424 --subnet 10.9.0.0
+
+      - name: Verify interface and 3.1 parameters
+        run: |
+          docker exec amnezia-awg-ci awg show awg0 | tee awg-show.txt
+          grep -q "header protection key:" awg-show.txt
+          grep -q "content padding addition:" awg-show.txt
+          grep -q "random trailers: on" awg-show.txt
+          grep -q "disable cookies: on" awg-show.txt
+
+      - name: Remove container
+        if: always()
+        run: docker rm -f amnezia-awg-ci || true

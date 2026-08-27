@@ -1,0 +1,83 @@
+name: Bug report
+description: Report an installer or container problem that is reproducible
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Remove all private keys, VPN configs, QR codes, and real server addresses before submitting.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and its impact.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the exact install command and its flags.
+      placeholder: |
+        1. Run ./install.sh awg --port ...
+        2. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Protocol
+      options:
+        - AmneziaWG 3.1 (awg)
+        - AmneziaWG 1.5 (awg-legacy)
+        - Xray (xray)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Server environment
+      description: OS version, Docker version, architecture, and virtualization type.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit
+      description: Output of `git rev-parse --short HEAD`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized installer output
+      description: Use a code block and remove keys, addresses, and identifying data.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I removed private keys, configs, QR codes, and real server addresses.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

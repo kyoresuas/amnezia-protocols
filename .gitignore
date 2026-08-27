@@ -1,0 +1,9 @@
+# misc
+.DS_Store
+.vscode
+.idea
+
+# local 
+*.log
+*.key
+*.conf.local
