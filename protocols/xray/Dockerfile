@@ -1,4 +1,4 @@
-FROM alpine:3.15
+FROM alpine:3.20
 LABEL maintainer="AmneziaVPN"
 
 ARG XRAY_RELEASE="v25.8.3"
