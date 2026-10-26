@@ -2,8 +2,16 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_SLUG="kyoresuas/amnezia-protocols"
+REPO_REF="${AMNEZIA_PROTOCOLS_REF:-main}"
+
+# При запуске через curl | bash файла на диске нет, и каталога protocols рядом тоже
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
 PROTOCOLS_DIR="$SCRIPT_DIR/protocols"
+BOOTSTRAP_DIR=""
 
 supports_color() { [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; }
 if supports_color; then
@@ -15,6 +23,34 @@ fi
 
 step() { printf "\n%b\n" "${BOLD}${CYAN}▶ $*${R}"; }
 die()  { printf "%b\n" "${RED}✗ ОШИБКА:${R} $*" >&2; exit 1; }
+
+# Скачивает архив репозитория и запускает установщик из него, нужно для curl | bash
+bootstrap() {
+  command -v curl &>/dev/null || die "Для запуска через curl нужен curl."
+  command -v tar &>/dev/null  || die "Для запуска через curl нужен tar."
+
+  local stdin_source=/dev/null
+  BOOTSTRAP_DIR="$(mktemp -d)"
+  trap 'rm -rf "$BOOTSTRAP_DIR"' EXIT
+
+  step "Загрузка $REPO_SLUG ($REPO_REF)"
+  curl -fsSL "https://github.com/$REPO_SLUG/archive/$REPO_REF.tar.gz" \
+    | tar -xz -C "$BOOTSTRAP_DIR" --strip-components=1 \
+    || die "Не удалось скачать архив. Проверьте доступ к github.com и значение AMNEZIA_PROTOCOLS_REF."
+
+  # Скрипт читается из stdin, поэтому дочернему установщику отдаём терминал или пустой ввод,
+  # иначе docker exec -i съест остаток скрипта
+  if (: </dev/tty) 2>/dev/null; then
+    stdin_source=/dev/tty
+  fi
+
+  bash "$BOOTSTRAP_DIR/install.sh" "$@" <"$stdin_source"
+}
+
+if [ -z "$SCRIPT_DIR" ] || [ ! -d "$PROTOCOLS_DIR" ]; then
+  bootstrap "$@"
+  exit 0
+fi
 
 # Описания протоколов для меню и справки
 protocol_title() {

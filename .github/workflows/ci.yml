@@ -24,6 +24,23 @@ jobs:
       - name: ShellCheck
         run: shellcheck install.sh protocols/*/*.sh
 
+  bootstrap:
+    name: One-command install
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run the installer from a pipe
+        env:
+          AMNEZIA_PROTOCOLS_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          cat install.sh | bash -s -- help | tee help.txt
+          grep -q "Загрузка kyoresuas/amnezia-protocols" help.txt
+          grep -q "AmneziaWG 3.1" help.txt
+
   smoke:
     name: Install ${{ matrix.protocol }}
     runs-on: ubuntu-latest

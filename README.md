@@ -7,9 +7,13 @@
 
 **English** · [Русский](README_RU.md)
 
-**Command-line installers for Amnezia VPN protocols.** Deploy AmneziaWG 3.1, legacy AmneziaWG, or Xray with REALITY on any Linux server with Docker—without the Amnezia desktop client, without SSH-ing from a GUI, and without generating keys by hand.
+**Install AmneziaWG 3.1 or Xray REALITY on your own server with one command.** The installers run in Docker, need no desktop client, and create the same containers the Amnezia app does, so the server keeps working with the app and with [Amnezia API](https://github.com/kyoresuas/amnezia-api).
 
-The containers, paths, and parameter names match what the Amnezia client creates, so the resulting server stays fully compatible with the Amnezia app and with [Amnezia API](https://github.com/kyoresuas/amnezia-api).
+```bash
+curl -fsSL https://raw.githubusercontent.com/kyoresuas/amnezia-protocols/main/install.sh | sudo bash -s -- awg
+```
+
+Swap `awg` for `awg-legacy` (AmneziaWG 1.5) or `xray` (VLESS + REALITY), or leave it out to pick from a menu. Logged in as root? Drop `sudo`.
 
 [Quick start](#quick-start) · [Protocols](#supported-protocols) · [Options](#options) · [Security](#security)
 
@@ -41,6 +45,16 @@ The Amnezia client installs protocols over SSH from a desktop GUI. That does not
 
 Already have containers installed by the Amnezia client? You do **not** need these scripts—they create exactly the same layout. Use them when the client is not an option or when installs must be automated.
 
+## The full stack
+
+Three small projects cover the path from an empty server to users whose Russian traffic goes direct:
+
+| Step | Project | What it does |
+| --- | --- | --- |
+| 1. Server | **amnezia-protocols** (this repo) | Installs AmneziaWG 3.1, AmneziaWG 1.5, or Xray REALITY in Docker |
+| 2. Clients | [amnezia-api](https://github.com/kyoresuas/amnezia-api) | Issues, disables, and deletes clients over HTTP and returns ready-to-import `vpn://` configs |
+| 3. Routing | [ru-direct](https://github.com/kyoresuas/ru-direct) | Daily-updated lists of Russian subnets and domains: banks, Gosuslugi, and marketplaces go direct, everything else goes through your server |
+
 ## Supported protocols
 
 | Protocol | Command | Container | Server config |
@@ -54,13 +68,32 @@ AmneziaWG 3.1 lives in the `amnezia-awg2` container—the same one the Amnezia c
 ## Requirements
 
 - A Linux server with Docker and outbound access to Docker Hub.
+- `curl` and `tar` for the one-command install; `git` if you prefer to clone.
 - Root or `sudo` access.
 - A free UDP port for AmneziaWG or a free TCP port for Xray.
 - Debian or Ubuntu is tested; any Docker-capable distribution should work.
 
 ## Quick start
 
-Clone the repository on the server and run the installer:
+### One command
+
+Run it on the server. Anything after `--` goes to the installer, so every flag from [Options](#options) works:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kyoresuas/amnezia-protocols/main/install.sh | sudo bash -s -- awg --port 55424 --subnet 10.8.1.0
+```
+
+The script downloads this repository as an archive into a temporary directory, runs the installer for the chosen protocol, and deletes the archive afterwards.
+
+Piping a script into a root shell means trusting whatever sits at that URL. To pin a version, use a tag or commit in both places:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kyoresuas/amnezia-protocols/<ref>/install.sh | sudo AMNEZIA_PROTOCOLS_REF=<ref> bash -s -- awg
+```
+
+### From a clone
+
+Prefer to read the code first? Clone the repository on the server and run the installer:
 
 ```bash
 git clone https://github.com/kyoresuas/amnezia-protocols.git
@@ -83,6 +116,18 @@ The installer:
 5. Generates server keys and the server config inside the container.
 6. Installs `start.sh`, restarts the container, and prints the public key.
 
+A finished AmneziaWG 3.1 install ends with this summary (the installer prints its messages in Russian, and the public key differs on every server):
+
+```text
+Готово!
+────────────────────────────────────
+  Контейнер: amnezia-awg2
+  Протокол: AmneziaWG 3.1
+  Порт: 55424/udp
+  Подсеть: 10.8.0.0/24
+  Public key: <server public key>
+```
+
 > [!WARNING]
 > `--force` recreates the container and generates **new server keys**. Every previously issued client config stops working. Never run it against a server with live users unless that is what you want.
 
@@ -94,6 +139,7 @@ Shared by every protocol:
 | --- | --- | --- |
 | `--name` | `CONTAINER_NAME` | Container name; defaults to the Amnezia name for that protocol |
 | `--force` | — | Recreate an existing container and regenerate keys |
+| — | `AMNEZIA_PROTOCOLS_REF` | Branch, tag, or commit the one-command install downloads; defaults to `main` |
 
 ### AmneziaWG 3.1 and 1.5
 
@@ -181,6 +227,8 @@ The API detects the running containers, serves `amnezia-awg2` as the `amneziawg3
 docker exec amnezia-awg2 sh -lc 'awg syncconf awg0 <(awg-quick strip /opt/amnezia/awg/awg0.conf)'
 ```
 
+Once clients connect, give them the [ru-direct](https://github.com/kyoresuas/ru-direct) lists so Russian banks, Gosuslugi, and marketplaces keep working without the VPN.
+
 ## Removing a protocol
 
 ```bash
@@ -192,6 +240,7 @@ docker rmi amnezia-awg2
 
 These scripts create privileged containers that terminate VPN traffic and hold server keys.
 
+- The one-command install pipes a script into a root shell. Pin a tag or commit in the URL and in `AMNEZIA_PROTOCOLS_REF`, or clone the repository and read the code first.
 - Containers run with `--privileged`, `NET_ADMIN`, and `SYS_MODULE`; install them only on hosts you control.
 - Server keys live inside the container filesystem. Copy them out for backup and store them as secrets.
 - Publish only the ports you need and restrict the rest at the host firewall or cloud security group.
@@ -214,6 +263,7 @@ CI runs the same checks and installs AmneziaWG 3.1 on a clean runner. See [CONTR
 
 - [amnezia-api](https://github.com/kyoresuas/amnezia-api) — REST API for managing clients on the servers these scripts create.
 - [amnezia-panel](https://github.com/slowy19/amnezia-panel) — a web administration panel built on top of Amnezia API.
+- [ru-direct](https://github.com/kyoresuas/ru-direct) — daily-updated Russian subnet and domain lists for split tunneling in AmneziaVPN, WireGuard, Xray, sing-box, and routers.
 
 ## Support the project
 
