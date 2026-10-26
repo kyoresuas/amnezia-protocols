@@ -269,7 +269,6 @@ CI runs the same checks and installs AmneziaWG 3.1 on a clean runner. See [CONTR
 
 If Amnezia Protocols is useful to you, you can support its development:
 
-- **Russian MIR card:** `2200700644781816`
 - **TON:** `kyoresuas.ton`
 - **TON wallet address:** `UQATzyMcVoZudjaA5Rc9w5TV_lIqxh9DPk0gSnjkLVvwEVqz`
 - **USDT on TRON (TRC-20):** `TJSLjDo4yRgHr9JqqEcrkbC51bP9DCiBC7`
